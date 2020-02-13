@@ -26,6 +26,7 @@ importlib.reload(utils)
 
 # %%
 idtrain, Xtrain, ytrain = utils.load_train_data()
+idtest, Xtest = utils.load_test_data()
 
 
 # # %%
@@ -58,31 +59,36 @@ class MyDataset(torch.utils.data.Dataset):
 
 
 # %%
-training_samples = math.floor(len(Xtrain)/100)
+training_samples = math.floor(len(Xtrain))
 
 Xtrain_tensor = torch.FloatTensor(Xtrain[:training_samples, ~np.isnan(sum(Xtrain))])
 ytrain_tensor = torch.FloatTensor(ytrain[:training_samples])
+Xtest_tensor = torch.FloatTensor(Xtest)
 
 # Normalize data
-for i in range(Xtrain_tensor.shape[1]):
-    col_max = max(Xtrain_tensor[:, i])
-    col_min = min(Xtrain_tensor[:,i])
-    Xtrain_tensor[:, i] = (Xtrain_tensor[:, i] - col_min) / (col_max - col_min)
+#for i in range(Xtrain_tensor.shape[1]):
+#    col_max = max(Xtrain_tensor[:, i])
+#    col_min = min(Xtrain_tensor[:,i])
+#    Xtrain_tensor[:, i] = (Xtrain_tensor[:, i] - col_min) / (col_max - col_min)
 
 test_features = range(24)
 print('Testing features ' + str(test_features))
 
-num_datapoints = len(Xtrain_tensor)
-slice_idx = math.floor(num_datapoints/10)
+num_datapoints = len(Xtrain_tensor)/100
+slice_idx = math.floor(num_datapoints)
 
 train_dataset = MyDataset(Xtrain_tensor[slice_idx:,test_features], ytrain_tensor[slice_idx:])
 test_dataset = MyDataset(Xtrain_tensor[:slice_idx,test_features], ytrain_tensor[:slice_idx])
+actualtest_dataset = MyDataset(Xtest_tensor)
+
 
 train_dataloader = torch.utils.data.DataLoader(train_dataset, batch_size=32, shuffle=True)
 test_dataloader = torch.utils.data.DataLoader(test_dataset, batch_size=len(test_dataset), shuffle=True)
 
-learning_rates = [1e-2, 1e-3, 1e-4]
-layer_sizes = [[1000], [500, 500], [750,250],[250,750],[300, 600, 300],[150,600,450],[450,600,150],[150,900,150]]
+learning_rates = [1e-2]# , 1e-3, 1e-4]
+# layer_sizes = [[1000], [500, 500], [750,250],[250,750],[300, 600, 300],[150,600,450],[450,600,150],[150,900,150]]
+# layer_sizes = [[1000], [500, 500], [150, 900, 150]]
+layer_sizes = [[150, 900, 150]]
 eta = 1e-2
 
 results = []
@@ -134,7 +140,7 @@ for eta in learning_rates:
                 optimizer.step()# Weight update
 
             # Track loss each epoch
-            # print('Train Epoch: %d  Loss: %.4f' % (epoch + 1,  loss.item()))
+            print('Train Epoch: %d  Loss: %.4f' % (epoch + 1,  loss.item()))
             
         # Putting layers like Dropout into evaluation mode
         model.eval()
@@ -169,6 +175,16 @@ for eta in learning_rates:
 
 # print(results)
 
+for data, target in actualtest_dataloader:
+    data = data.to(device)
+    target = target.to(device)
+    output = model(data)
+
+
+with open('results.csv', mode='w') as csvfile:
+    csvwriter = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+    for i, y in zip(idxtest, output):
+    	csvwriter.writerow(i, y)
 
 # %%
 
