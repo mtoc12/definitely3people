@@ -7,8 +7,8 @@ import numbers
 import torch
 from torch import nn
 import numpy as np
-import matplotlib
-import matplotlib.pyplot as plt
+#import matplotlib
+#import matplotlib.pyplot as plt
 import sklearn.metrics
 
 import utils
@@ -30,8 +30,8 @@ idtrain, Xtrain, ytrain = utils.load_train_data()
 
 # %%
 print(Xtrain.shape)
-plt.imshow(np.corrcoef(Xtrain.transpose()), cmap='hot')
-plt.show()
+#plt.imshow(np.corrcoef(Xtrain.transpose()), cmap='hot')
+#plt.show()
 
 
 # %%
@@ -68,7 +68,7 @@ class MyDataset(torch.utils.data.Dataset):
 
 
 # %%
-training_samples = math.floor(len(Xtrain)/1000)
+training_samples = math.floor(len(Xtrain)/100)
 
 Xtrain_tensor = torch.FloatTensor(Xtrain[:training_samples, ~np.isnan(sum(Xtrain))])
 ytrain_tensor = torch.FloatTensor(ytrain[:training_samples])
@@ -108,6 +108,7 @@ for eta in learning_rates:
                 modules.append(nn.Linear(size_last, size_next))
                 modules.append(nn.ReLU())
                 modules.append(nn.BatchNorm1d(size_next))
+                modules.append(nn.Dropout(0.1))
                 size_last = size_next
             else:
                 pass
@@ -121,7 +122,7 @@ for eta in learning_rates:
         # Some layers, such as Dropout, behave differently during training
         model.train()
 
-        for epoch in range(1):
+        for epoch in range(10):
             i = 0
             for batch_idx, (data, target) in enumerate(train_dataloader):
                 if i % (math.floor(100)) == 0:
@@ -153,7 +154,7 @@ for eta in learning_rates:
                 target = target.to(device)
                 output = model(data)
                 test_loss += loss_fn(output, target).item()  # Sum up batch loss
-                test_auc += sklearn.metrics.roc_auc_score(target.data.numpy(), output.data.numpy())
+                test_auc += sklearn.metrics.roc_auc_score(target.data.cpu().numpy(), output.data.cpu().numpy())
                 pred = output.round()  # Get the index of the max class score
                 correct += pred.eq(target.view_as(pred)).sum().item()
 
