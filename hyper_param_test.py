@@ -28,27 +28,17 @@ importlib.reload(utils)
 idtrain, Xtrain, ytrain = utils.load_train_data()
 
 
-# %%
-print(Xtrain.shape)
-plt.imshow(np.corrcoef(Xtrain.transpose()), cmap='hot')
-plt.show()
+# # %%
+# print(Xtrain.shape)
+# plt.imshow(np.corrcoef(Xtrain.transpose()), cmap='hot')
+# plt.show()
 
 
-# %%
-for i in range(Xtrain.shape[1]):
-    print('i=' + repr(i) + ' has '+
-         repr(np.count_nonzero(np.isnan(Xtrain[:,i]))) +
-         ' nan values out of ' + repr(Xtrain.shape[0]))
-
-
-# %%
-Xtrain_tensor = torch.Tensor(Xtrain)
-ytrain_tensor = torch.Tensor(ytrain)
-train_dataset = torch.utils.data.TensorDataset(Xtrain_tensor, ytrain_tensor)
-
-
-# %%
-print(len(train_dataset), type(train_dataset[0][0]), type(train_dataset[0][1]))
+# # %%
+# for i in range(Xtrain.shape[1]):
+#     print('i=' + repr(i) + ' has '+
+#          repr(np.count_nonzero(np.isnan(Xtrain[:,i]))) +
+#          ' nan values out of ' + repr(Xtrain.shape[0]))
 
 # %%
 class MyDataset(torch.utils.data.Dataset):
@@ -68,10 +58,16 @@ class MyDataset(torch.utils.data.Dataset):
 
 
 # %%
-training_samples = math.floor(len(Xtrain)/1000)
+training_samples = math.floor(len(Xtrain)/100)
 
 Xtrain_tensor = torch.FloatTensor(Xtrain[:training_samples, ~np.isnan(sum(Xtrain))])
 ytrain_tensor = torch.FloatTensor(ytrain[:training_samples])
+
+# Normalize data
+for i in range(Xtrain_tensor.shape[1]):
+    col_max = max(Xtrain_tensor[:, i])
+    col_min = min(Xtrain_tensor[:,i])
+    Xtrain_tensor[:, i] = (Xtrain_tensor[:, i] - col_min) / (col_max - col_min)
 
 test_features = range(24)
 print('Testing features ' + str(test_features))
