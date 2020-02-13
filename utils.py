@@ -17,7 +17,7 @@ def load_train_data(datafolder='./data/', skiprows=1, shuffle=False):
 
     if not(os.path.exists(datafolder)):
         unzip_data(datafolder=datafolder)
-    traindata = np.genfromtxt(datafolder + 'train.csv', skip_header=skiprows, delimiter=',')
+    traindata = np.genfromtxt(datafolder + 'train.csv', skip_header=skiprows, delimiter=',', dtype=float)
     idtrain = traindata[:,0]
     Xtrain = traindata[:, 1:-1]
     ytrain = traindata[:, -1]
@@ -42,7 +42,9 @@ def load_train_Dataset(*args, **kwargs):
         Try running
             train_dataset = utils.load_train_Dataset()
     '''
-    idtrain, Xtrain, ytrain = load_test_data(**kwargs)
+    idtrain, Xtrain, ytrain = load_train_data(**kwargs)
+    print(Xtrain)
+    print(ytrain)
     dataset = torch.utils.data.TensorDataset(Xtrain, ytrain)
     return dataset
 
