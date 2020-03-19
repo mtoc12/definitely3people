@@ -81,3 +81,12 @@ def vectorize_sonnets(sonnets):
         lengths.append(len(next_seq))
 
     return sequences, lengths, word_library, feat_library, num_features
+
+def print_sonnet(sonnet):
+    string = ''
+    for line in sonnet:
+        for word in line:
+            string += word
+            string += ' '
+        string += '\n'
+    print(string)
