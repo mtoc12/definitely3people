@@ -49,6 +49,8 @@ def sequence_to_sonnet(sequence, feat_library):
     sonnet = []
     line = []
     for item in sequence:
+        if item.shape: # get value from array
+            item = item[0]
         word = feat_library[item]
         if word == '\n':
             sonnet.append(line)
@@ -72,7 +74,10 @@ def vectorize_sonnets(sonnets):
                     num_features += 1
 
     sequences = []
+    lengths = []
     for sonnet in sonnets:
-        sequences.append(sonnet_to_sequence(sonnet, word_library))
+        next_seq = sonnet_to_sequence(sonnet, word_library)
+        sequences += next_seq
+        lengths.append(len(next_seq))
 
-    return sequences, word_library, feat_library, num_features
+    return sequences, lengths, word_library, feat_library, num_features
