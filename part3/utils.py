@@ -35,3 +35,44 @@ def load_sonnets(datafile = './data/shakespeare.txt'):
                 sonnets[i][j][k] = word.lower()
 
     return sonnets
+
+def sonnet_to_sequence(sonnet, word_library):
+    sequence = []
+    for line in sonnet:
+        for word in line:
+            sequence.append(word_library[word])
+        sequence.append(word_library['\n'])
+    sequence.append(word_library['\end'])
+    return sequence
+
+def sequence_to_sonnet(sequence, feat_library):
+    sonnet = []
+    line = []
+    for item in sequence:
+        word = feat_library[item]
+        if word == '\n':
+            sonnet.append(line)
+            line = []
+        elif word == '\end':
+            return sonnet
+        else:
+            line.append(word)
+            
+def vectorize_sonnets(sonnets):
+    word_library = {'\n':0, '\end':1}
+    feat_library = {0:'\n', 1:'\end'}
+    num_features = 2
+    for sonnet in sonnets:
+        for line in sonnet:
+            for word in line:
+                # Check if word is already in dictionary
+                if not word in word_library.keys():
+                    word_library[word] = num_features
+                    feat_library[num_features] = word
+                    num_features += 1
+
+    sequences = []
+    for sonnet in sonnets:
+        sequences.append(sonnet_to_sequence(sonnet, word_library))
+
+    return sequences, word_library, feat_library, num_features
