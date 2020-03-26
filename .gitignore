@@ -1,5 +1,5 @@
 # Add more things to ignore here
-data/
+#data/
 test.ipynb 
 Untitled.ipynb
 
