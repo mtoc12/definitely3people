@@ -59,6 +59,7 @@ def sequence_to_sonnet(sequence, feat_library):
             return sonnet
         else:
             line.append(word)
+    return sonnet
             
 def vectorize_sonnets(sonnets):
     word_library = {'\n':0, '\end':1}
