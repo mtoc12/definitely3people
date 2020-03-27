@@ -21,11 +21,16 @@ def create_syllable_dictionary():
             word = line.split()[0].strip()
             syl_dict[word] = index+1
             code_dict[index+1] = word
-    return syl_dict, code_dict
+    return syl_dict, code_dict, syl_dict_file
 
-def read_in_sonnets():
+def read_in_sonnets(syl_dict_file):
     sonnets = []
-    sonnet_files = ["Dylan/shakespeare_tokenized.txt", "Dylan/spenser_tokenized.txt"]
+    if syl_dict_file == "Dylan/syllable_dictionary_augmented.txt":
+        sonnet_files = ["Dylan/shakespeare_tokenized.txt", "Dylan/spenser_tokenized.txt"]
+    elif syl_dict_file == "Dylan/syllable_dictionary.txt":
+        sonnet_files = ["Dylan/shakespeare_tokenized.txt"]
+    else:
+        raise ValueError
     for sonnet_file in sonnet_files:
         with open(sonnet_file,"r") as translation:
             for line in translation:
@@ -72,7 +77,7 @@ def read_in_syllable_counts():
                 import pdb; pdb.set_trace()
                 raise ValueError
     # change word-based dict to code-based one
-    syl_dict, code_dict = create_syllable_dictionary()
+    syl_dict, _, _ = create_syllable_dictionary()
     new_syl_dict = {}
     for syl in syllable_counts:
         new_syl_dict[ syl_dict[syl] ] = syllable_counts[syl]
@@ -106,8 +111,10 @@ def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet"):
 
     model = hmm.MultinomialHMM(n_components=n_hmm_comps)
 
+    syl_dict, code_dict, syl_dict_file = create_syllable_dictionary()
+
     # get all the sonnets and make sure they all have 14 lines
-    sonnets = read_in_sonnets()
+    sonnets = read_in_sonnets(syl_dict_file)
     sonnet_number = 0
     author = "shakespeare"
     for sonnet in sonnets:
@@ -120,8 +127,6 @@ def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet"):
         if sonnet_number == 152:
             sonnet_number = 0 # resetting when we finish with shakespeare and start counting spenser's sonnets
             author = "spenser"
-
-    syl_dict, code_dict = create_syllable_dictionary()
 
     # pad lines: either add padding to end or inline to correspond to syllable number
     padding = padding_type
