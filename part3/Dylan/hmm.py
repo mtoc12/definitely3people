@@ -194,6 +194,66 @@ def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet"):
     snt_np = np.array(snt_trans)
     snt_np = snt_np.reshape(14,10)
     print(snt_np)
+    
+    # compute test sonnet's perplexity
+    sonnet_perplexity = compute_perplexity(snt_trans)
+    print("Perplexity of generated sonnet: " + str(sonnet_perplexity))
+    
+
+def compute_perplexity(sonnet):
+    # Inspiration:
+    # https://stackoverflow.com/questions/33266956/nltk-package-to-estimate-the-unigram-perplexity
+    #
+    # Just feed it a flat list of words and it'll give you their perplexity, relative to
+    # the combined Shakespeare/Spenser corpus. The get preplexity relative to just Shakespeare,
+    # just comment out the Spenser lines immediately below here.
+    
+    import collections, nltk, re
+    from decimal import Decimal
+    
+    # clean up text for tokenization
+    corpus_lines = []
+    with open('Dylan/shakespeare_redacted.txt', 'r') as shakespeare_file:
+        for shake_line in shakespeare_file:
+            if re.match("     ", shake_line):
+                pass
+            else:
+                corpus_lines.append(shake_line)
+    corpus_lines.append("\n")
+    with open('Dylan/spenser_redacted.txt', 'r') as spenser_file:
+        for spense_line in spenser_file:
+            if re.match("[LXVI]+", spense_line):
+                pass
+            else:
+                corpus_lines.append(spense_line)
+    corpus = " ".join(corpus_lines)
+
+    # tokenize corpus text
+    tokens = nltk.word_tokenize(corpus)
+
+    # contruct unigram model
+    model = collections.defaultdict(lambda: 0.01)
+    for f in tokens:
+        try:
+            model[f] += 1
+        except KeyError:
+            model[f] = 1
+            continue
+    N = float(sum(model.values()))
+    for word in model:
+        model[word] = model[word]/N
+
+    # compute perplexity
+    sonnet = [ word for word in sonnet if word != "" ]
+    testset = sonnet
+    perplexity = Decimal(1)
+    N = 0
+    for word in testset:
+        N += 1
+        perplexity = perplexity * Decimal(1/model[word])
+    perplexity = pow(perplexity, Decimal(1/N))
+    return perplexity
 
 if __name__=='__main__':
+    #import pdb; pdb.set_trace()
     main(7, "inline", "line")
