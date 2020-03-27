@@ -1,16 +1,16 @@
 # hmm.py
 # If you're running into trouble, execute `python tokenize.py` first to create the augmented syllable dictionary.
-# The three tunable parameters are passed in at the bottom of this file
+# The four tunable parameters are passed in at the bottom of this file and described in Dylan_hmm_generation.ipynb.
 
 import re
 import numpy as np
 import os
 from hmmlearn import hmm
 
-def create_syllable_dictionary():
+def create_syllable_dictionary(authorship):
     syl_dict = {}
     code_dict = {}
-    if os.path.exists("Dylan/syllable_dictionary_augmented.txt"):
+    if authorship == "both" and os.path.exists("Dylan/syllable_dictionary_augmented.txt"):
         print("Found shakespeare + spenser syllable dictionary!")
         syl_dict_file = "Dylan/syllable_dictionary_augmented.txt"
     else:
@@ -26,8 +26,10 @@ def create_syllable_dictionary():
 def read_in_sonnets(syl_dict_file):
     sonnets = []
     if syl_dict_file == "Dylan/syllable_dictionary_augmented.txt":
+        print("Using Shakespeare's and Spencer's sonnets!")
         sonnet_files = ["Dylan/shakespeare_tokenized.txt", "Dylan/spenser_tokenized.txt"]
     elif syl_dict_file == "Dylan/syllable_dictionary.txt":
+        print("Using only Shakespeare's sonnets!")
         sonnet_files = ["Dylan/shakespeare_tokenized.txt"]
     else:
         raise ValueError
@@ -49,10 +51,10 @@ def read_in_sonnets(syl_dict_file):
             sonnets.append(sonnet)
     return sonnets
 
-def read_in_syllable_counts():
+def read_in_syllable_counts(syl_dict, syl_dict_file):
     # get word-based syllable count dict
     syllable_counts = {}
-    with open("Dylan/syllable_dictionary_augmented.txt","r") as syl_counts:
+    with open(syl_dict_file,"r") as syl_counts:
         for syl_count in syl_counts:
             line_split = syl_count.split(" ")
             if len(line_split)==2:
@@ -77,7 +79,6 @@ def read_in_syllable_counts():
                 import pdb; pdb.set_trace()
                 raise ValueError
     # change word-based dict to code-based one
-    syl_dict, _, _ = create_syllable_dictionary()
     new_syl_dict = {}
     for syl in syllable_counts:
         new_syl_dict[ syl_dict[syl] ] = syllable_counts[syl]
@@ -106,27 +107,29 @@ def pad_line(syllable_counts, line):
     return padded_line, len(padded_line)
 
 
-def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet"):
+def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet", authorship="both"):
     np.random.seed(42)
 
     model = hmm.MultinomialHMM(n_components=n_hmm_comps)
 
-    syl_dict, code_dict, syl_dict_file = create_syllable_dictionary()
+    syl_dict, code_dict, syl_dict_file = create_syllable_dictionary(authorship)
 
     # get all the sonnets and make sure they all have 14 lines
     sonnets = read_in_sonnets(syl_dict_file)
-    sonnet_number = 0
-    author = "shakespeare"
-    for sonnet in sonnets:
-        sonnet_number = sonnet_number + 1
-        if len(sonnet) != 14:
-            print("Sonnet " + str(sonnet_number) + ", " + author)
-            print("sonnet length: " + str(len(sonnet)))
-            print(sonnet)
-            raise ValueError("SonnetError")
-        if sonnet_number == 152:
-            sonnet_number = 0 # resetting when we finish with shakespeare and start counting spenser's sonnets
-            author = "spenser"
+    check_for_14_lines = False
+    if check_for_14_lines:
+        sonnet_number = 0
+        author = "shakespeare"
+        for sonnet in sonnets:
+            sonnet_number = sonnet_number + 1
+            if len(sonnet) != 14:
+                print("Sonnet " + str(sonnet_number) + ", " + author)
+                print("sonnet length: " + str(len(sonnet)))
+                print(sonnet)
+                raise ValueError("SonnetError")
+            if sonnet_number == 152:
+                sonnet_number = 0 # resetting when we finish with shakespeare and start counting spenser's sonnets
+                author = "spenser"
 
     # pad lines: either add padding to end or inline to correspond to syllable number
     padding = padding_type
@@ -134,7 +137,7 @@ def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet"):
         max_line_length = 10
         snp = np.array([[line + [0] * (max_line_length - len(line)) for line in sonnet] for sonnet in sonnets])
     elif padding=="inline":
-        syllable_counts = read_in_syllable_counts()
+        syllable_counts = read_in_syllable_counts(syl_dict, syl_dict_file)
         padded_lines = []
         line_lengths = []
         for sonnet in sonnets:
@@ -198,6 +201,7 @@ def main(n_hmm_comps = 10, padding_type="end", learning_level = "sonnet"):
         snt_trans.append(code_dict[word[0]])
     snt_np = np.array(snt_trans)
     snt_np = snt_np.reshape(14,10)
+    print("Generated sonnet:")
     print(snt_np)
     
     # compute test sonnet's perplexity
@@ -237,7 +241,7 @@ def compute_perplexity(sonnet):
     tokens = nltk.word_tokenize(corpus)
 
     # contruct unigram model
-    model = collections.defaultdict(lambda: 0.01)
+    model = collections.defaultdict(lambda: 1/float(len(tokens)))
     for f in tokens:
         try:
             model[f] += 1
@@ -261,4 +265,4 @@ def compute_perplexity(sonnet):
 
 if __name__=='__main__':
     #import pdb; pdb.set_trace()
-    main(7, "inline", "line")
+    main(7, "inline", "line", "both")
